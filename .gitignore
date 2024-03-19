@@ -89,3 +89,7 @@ login/wxqr.png
 sftp-config.json
 __pycache__
 
+wukong_robot.srctrldb_tmp
+wukong_robot.srctrlbm
+wukong_robot.srctrldb
+wukong_robot.srctrlprj
