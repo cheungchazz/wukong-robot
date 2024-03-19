@@ -1,6 +1,8 @@
 # -*- coding: utf -8-*-
+import datetime
 import os
 import base64
+import random
 import tempfile
 import pypinyin
 import subprocess
@@ -24,6 +26,7 @@ from xml.etree import ElementTree
 
 logger = logging.getLogger(__name__)
 nest_asyncio.apply()
+
 
 class AbstractTTS(object):
     """
@@ -157,7 +160,7 @@ class AzureTTS(AbstractTTS):
     SLUG = "azure-tts"
 
     def __init__(
-        self, secret_key, region, lang="zh-CN", voice="zh-CN-XiaoxiaoNeural", **args
+            self, secret_key, region, lang="zh-CN", voice="zh-CN-XiaoxiaoNeural", **args
     ) -> None:
         super(self.__class__, self).__init__()
         self.post_url = "https://INSERT_REGION_HERE.tts.speech.microsoft.com/cognitiveservices/v1".replace(
@@ -223,6 +226,43 @@ class AzureTTS(AbstractTTS):
             logger.critical(f"{self.SLUG} 合成失败！", stack_info=True)
 
 
+class OpenAITTS(AbstractTTS):
+    """
+    使用OpenAI语音合成技术
+    """
+    SLUG = "openai-tts"
+
+    def __init__(self, open_api_key, **args) -> None:
+        super(self.__class__, self).__init__()
+        self.api_base = args.get("api_base", "https://api.openai.com/v1")
+        self.headers = {
+            'Authorization': f'Bearer {open_api_key}',
+            'Content-Type': 'application/json'
+        }
+        self.model = args.get("openai_tts_model", "tts-1")
+        self.voice_id = args.get("openai_tts_voice_id", "alloy")
+
+    @classmethod
+    def get_config(cls):
+        # 尝试从配置获取OpenAI语音合成配置
+        return config.get("openai_yuyin", {})
+
+    def get_speech(self, text):
+        url = f'{self.api_base}/audio/speech'
+        data = {
+            'model': self.model,
+            'input': text,
+            'voice': self.voice_id
+        }
+        response = requests.post(url, headers=self.headers, json=data)
+        if response.status_code == 200:
+            tmpfile = utils.write_temp_file(response.content, ".mp3")
+            logger.info(f"{self.SLUG} 语音合成成功，合成路径：{tmpfile}")
+            return tmpfile
+        else:
+            logger.critical(f"{self.SLUG} 合成失败！", stack_info=True)
+
+
 class BaiduTTS(AbstractTTS):
     """
     使用百度语音合成技术
@@ -280,14 +320,14 @@ class TencentTTS(AbstractTTS):
     SLUG = "tencent-tts"
 
     def __init__(
-        self,
-        appid,
-        secretid,
-        secret_key,
-        region="ap-guangzhou",
-        voiceType=0,
-        language=1,
-        **args,
+            self,
+            appid,
+            secretid,
+            secret_key,
+            region="ap-guangzhou",
+            voiceType=0,
+            language=1,
+            **args,
     ):
         super(self.__class__, self).__init__()
         self.engine = TencentSpeech.tencentSpeech(secret_key, secretid)
@@ -386,7 +426,7 @@ class EdgeTTS(AbstractTTS):
         try:
             tmpfile = os.path.join(constants.TEMP_PATH, uuid.uuid4().hex + ".mp3")
             tts = edge_tts.Communicate(text=phrase, voice=self.voice)
-            await tts.save(tmpfile)    
+            await tts.save(tmpfile)
             logger.info(f"{self.SLUG} 语音合成成功，合成路径：{tmpfile}")
             return tmpfile
         except Exception as e:
@@ -398,8 +438,7 @@ class EdgeTTS(AbstractTTS):
         tmpfile = event_loop.run_until_complete(self.async_get_speech(phrase))
         event_loop.close()
         return tmpfile
-        
-            
+
 
 class MacTTS(AbstractTTS):
     """
@@ -433,6 +472,7 @@ class MacTTS(AbstractTTS):
         else:
             logger.critical(f"{self.SLUG} 合成失败！", stack_info=True)
 
+
 class VITS(AbstractTTS):
     """
     VITS 语音合成
@@ -464,6 +504,7 @@ class VITS(AbstractTTS):
         tmpfile = utils.write_temp_file(result, ".wav")
         logger.info(f"{self.SLUG} 语音合成成功，合成路径：{tmpfile}")
         return tmpfile
+
 
 def get_engine_by_slug(slug=None):
     """
