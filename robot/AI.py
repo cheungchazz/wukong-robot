@@ -319,8 +319,7 @@ class OPENAIRobot(AbstractRobot):
                 url,
                 headers=header,
                 json=data,
-                stream=True,
-                proxies={"https": self.openai.proxy},
+                stream=True
             )
 
             def generate():
