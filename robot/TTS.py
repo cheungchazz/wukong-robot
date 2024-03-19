@@ -10,6 +10,7 @@ import asyncio
 import edge_tts
 import nest_asyncio
 
+from langid import classify
 from aip import AipSpeech
 from . import utils, config, constants
 from robot import logging
@@ -184,13 +185,36 @@ class AzureTTS(AbstractTTS):
         return config.get("azure_yuyin", {})
 
     def get_speech(self, phrase):
+        # 识别文本的语言
+        lang_code = classify(phrase)[0]
+        config_key = "speech_synthesis_" + lang_code
+
+        # 从配置中获取相应的voice名称
+        voice_config = {
+            "speech_synthesis_zh": "zh-CN-XiaoyiNeural",
+            "speech_synthesis_en": "en-US-AmberNeural",
+            "speech_synthesis_ja": "ja-JP-MayuNeural",
+            "speech_synthesis_ko": "ko-KR-JiMinNeural",
+            "speech_synthesis_de": "de-DE-AmalaNeural",
+            "speech_synthesis_fr": "fr-FR-BrigitteNeural",
+            "speech_synthesis_es": "es-ES-LiaNeural",
+        }
+        voice_name = voice_config.get(config_key, "zh-CN-XiaoxiaoNeural")
+
+        # 设置voice的name属性
+        self.vc.set("name", voice_name)
+
+        # 设置vc的文本
         self.vc.text = phrase
+
+        # 发送请求以获取语音
         result = self.sess.post(
             self.post_url,
             headers=self.post_header,
             data=ElementTree.tostring(self.body),
         )
-        # 识别正确返回语音二进制,http状态码为200
+
+        # 处理返回结果
         if result.status_code == 200:
             tmpfile = utils.write_temp_file(result.content, ".mp3")
             logger.info(f"{self.SLUG} 语音合成成功，合成路径：{tmpfile}")
