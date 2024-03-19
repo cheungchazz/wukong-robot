@@ -100,6 +100,7 @@ lru_cache:
 # mac-tts       - macOS 系统自带TTS（mac 系统推荐）
 # edge-tts      - 基于 Edge 的 TTS（推荐）
 # VITS          - 基于 VITS 的AI语音合成
+# openai-tts    - 基于 openai 的AI语音合成
 tts_engine: edge-tts
 
 # 语音识别服务配置
@@ -161,6 +162,15 @@ tencent_yuyin:
     region: 'ap-guangzhou'  # 服务地区，有效值：http://suo.im/4EEQYD
     voiceType: 0            # 0: 女声1；1：男生1；2：男生2
     language: 1             # 1: 中文；2：英文
+
+
+# openai语音
+openai_yuyin:
+    api_base: 'https://api.openai.com/v1'
+    open_api_key: 'sk-*******'
+    openai_tts_model: 'tts'
+    openai_tts_voice_id: 'alloy'
+
 
 # 达摩院FunASR实时语音转写服务软件包
 fun_asr:
