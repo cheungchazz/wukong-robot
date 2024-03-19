@@ -215,16 +215,17 @@ class WhisperASR(AbstractASR):
 
     SLUG = "openai"
 
-    def __init__(self, openai_api_key, api_base, **args):
+    def __init__(self, openai_api_key, **args):
         super(self.__class__, self).__init__()
         try:
             import openai
 
             self.openai = openai
             self.openai.api_key = openai_api_key
+            api_base = args.get("api_base")
             if api_base:
                 self.openai.api_base = api_base
-                print(f"open_api_base:{api_base}")
+            print(f"open_api_base:{api_base}")
             print(f"open_api_key:{openai_api_key}")
         except Exception:
             logger.critical("OpenAI 初始化失败，请升级 Python 版本至 > 3.6")
@@ -246,6 +247,7 @@ class WhisperASR(AbstractASR):
                 return ""
         logger.critical(f"{self.SLUG} 语音识别出错了", stack_info=True)
         return ""
+
 
 class FunASR(AbstractASR):
     """
@@ -270,6 +272,7 @@ class FunASR(AbstractASR):
         else:
             logger.critical(f"{self.SLUG} 语音识别出错了", stack_info=True)
             return ""
+
 
 def get_engine_by_slug(slug=None):
     """
