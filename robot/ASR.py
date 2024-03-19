@@ -74,6 +74,7 @@ class AzureASR(AbstractASR):
             logger.info(f"{self.SLUG} 语音识别到了：{res['DisplayText']}")
             return "".join(res["DisplayText"])
         else:
+            res = ret.json()
             logger.info(f"{self.SLUG} 语音识别出错了: {res.text}")
             return ""
 
@@ -214,14 +215,17 @@ class WhisperASR(AbstractASR):
 
     SLUG = "openai"
 
-    def __init__(self, openai_api_key, **args):
+    def __init__(self, openai_api_key, api_base, **args):
         super(self.__class__, self).__init__()
         try:
             import openai
 
             self.openai = openai
             self.openai.api_key = openai_api_key
-            print(openai_api_key)
+            if api_base:
+                self.openai.api_base = api_base
+                print(f"open_api_base:{api_base}")
+            print(f"open_api_key:{openai_api_key}")
         except Exception:
             logger.critical("OpenAI 初始化失败，请升级 Python 版本至 > 3.6")
 
@@ -237,8 +241,8 @@ class WhisperASR(AbstractASR):
                     if result:
                         logger.info(f"{self.SLUG} 语音识别到了：{result.text}")
                         return result.text
-            except Exception:
-                logger.critical(f"{self.SLUG} 语音识别出错了", stack_info=True)
+            except Exception as e:
+                logger.critical(f"{self.SLUG} 语音识别出错了: {e}", stack_info=True)
                 return ""
         logger.critical(f"{self.SLUG} 语音识别出错了", stack_info=True)
         return ""
